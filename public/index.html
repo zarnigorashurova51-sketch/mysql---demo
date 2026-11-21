@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mehmonlar kitobi</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #1f1b3a;
+      background: linear-gradient(135deg, #7b2ff7 0%, #5b4cf0 45%, #2f80ed 100%);
+      background-attachment: fixed;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+
+    main { width: 100%; max-width: 560px; }
+
+    .owner {
+      margin: 0 0 12px;
+      text-align: center;
+      color: #fff;
+      font-size: clamp(2.4rem, 10vw, 4rem);
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      word-break: break-word;
+      text-shadow: 0 6px 28px rgba(20, 10, 60, 0.4);
+    }
+
+    h1 {
+      margin: 0 0 28px;
+      text-align: center;
+      color: #fff;
+      font-size: clamp(2rem, 7vw, 3rem);
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-shadow: 0 4px 24px rgba(20, 10, 60, 0.35);
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(20, 10, 60, 0.28);
+    }
+
+    form { display: flex; gap: 12px; }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      font: inherit;
+      font-size: 1rem;
+      padding: 14px 16px;
+      border: 2px solid #e4e0f7;
+      border-radius: 12px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus {
+      border-color: #6a3df2;
+      box-shadow: 0 0 0 4px rgba(106, 61, 242, 0.15);
+    }
+
+    button {
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      padding: 14px 24px;
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #7b2ff7, #2f80ed);
+      box-shadow: 0 6px 16px rgba(91, 76, 240, 0.35);
+      transition: transform .15s, opacity .15s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .6; cursor: default; transform: none; }
+
+    .msg { min-height: 1.25em; margin: 10px 2px 0; font-size: .9rem; color: #c0264b; }
+
+    h2 {
+      margin: 24px 0 14px;
+      padding-top: 22px;
+      border-top: 1px solid #eeebfa;
+      font-size: 1.2rem;
+      color: #3b2d8f;
+    }
+
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #f6f4ff;
+    }
+    .name { font-weight: 700; word-break: break-word; }
+    .greet { color: #5b4cf0; word-break: break-word; }
+    .empty { color: #8a84a8; text-align: center; padding: 8px 0; }
+
+    @media (max-width: 480px) {
+      body { padding: 32px 12px; }
+      .card { padding: 20px; border-radius: 16px; }
+      form { flex-direction: column; }
+      button { width: 100%; }
+      li { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="owner">Ashurova Zarnigor</p>
+    <h1>Salom! Ismingizni qoldiring</h1>
+
+    <div class="card">
+      <form id="form">
+        <input id="name" placeholder="Ismingiz" maxlength="100" autocomplete="name" aria-label="Ism" required>
+        <button id="save" type="submit">Saqlash</button>
+      </form>
+      <p class="msg" id="msg" role="status"></p>
+
+      <h2>Saqlangan ismlar</h2>
+      <ul id="list"><li class="empty">Yuklanmoqda...</li></ul>
+    </div>
+  </main>
+
+<script>
+const API = "/api/guests";
+const form = document.getElementById("form");
+const input = document.getElementById("name");
+const button = document.getElementById("save");
+const msg = document.getElementById("msg");
+const list = document.getElementById("list");
+
+function render(rows) {
+  list.innerHTML = "";
+  if (!rows.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "Hali hech kim ism qoldirmagan. Birinchi bo'ling!";
+    list.appendChild(li);
+    return;
+  }
+  for (const r of rows) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = r.name;
+    const greet = document.createElement("span");
+    greet.className = "greet";
+    greet.textContent = "Salom, " + r.name + "!";
+    li.append(name, greet);
+    list.appendChild(li);
+  }
+}
+
+async function load() {
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error();
+    render(await res.json());
+  } catch {
+    list.innerHTML = '<li class="empty">Ro\'yxatni yuklab bo\'lmadi.</li>';
+  }
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = input.value.trim();
+  if (!name) return;
+  button.disabled = true;
+  msg.textContent = "";
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error);
+    input.value = "";
+    await load();
+  } catch (err) {
+    msg.textContent = err.message || "Saqlashda xatolik yuz berdi.";
+  } finally {
+    button.disabled = false;
+    input.focus();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
